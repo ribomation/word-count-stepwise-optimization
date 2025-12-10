@@ -1,0 +1,8 @@
+bld/
+build/
+cmake-build-default/
+cmake-build-debug/
+cmake-build-release/
+.idea/
+.vscode/
+tmp/
