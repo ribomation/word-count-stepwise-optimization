@@ -1,3 +1,5 @@
+set(WC ${CMAKE_SOURCE_DIR}/wordcount)
+
 add_executable(wordcount-gbench
     ${WC}/params.hxx
     ${WC}/utils.cxx

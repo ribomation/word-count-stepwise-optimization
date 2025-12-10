@@ -52,6 +52,4 @@ static void memmap_bm(benchmark::State& state) {
 }
 BENCHMARK(memmap_bm)->Unit(benchmark::kMillisecond)->Name("Memory-mapped file");
 
-
 BENCHMARK_MAIN();
-

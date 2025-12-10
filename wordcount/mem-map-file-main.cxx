@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
     auto params = Params{};
     params.parse(argc, argv);
 
-    word_count("Using reserve and partial_sort"s, params, [&params]() {
+    word_count("Memory-mapped file"s, params, [&params]() {
         return ribomation::wordcount::mem_map::run(params);
     });
 }
