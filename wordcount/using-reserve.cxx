@@ -134,11 +134,12 @@ namespace ribomation::wordcount::using_reserve {
 
         auto by_freq_desc = [](WordFreq const& a, WordFreq const& b) { return a.second > b.second; };
         //r::sort(sortable, by_freq_desc);
-        r::partial_sort(sortable, sortable.begin() + params.max_words, by_freq_desc);
+        auto const N = std::min<unsigned>(params.max_words, sortable.size());
+        r::partial_sort(sortable, sortable.begin() + N, by_freq_desc);
+        sortable.resize(N);
 
         // --- making html span tags ---
         //auto items = sortable | v::take(params.max_words) | r::to<std::vector<WordFreq>>();
-        sortable.resize(params.max_words);
         auto items = std::move(sortable);
 
         auto max_freq = items.front().second;

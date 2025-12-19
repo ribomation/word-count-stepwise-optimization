@@ -37,6 +37,7 @@ namespace ribomation::wordcount::mem_map {
     class MemoryMappedFile {
         void* storage = nullptr;
         size_t size = 0;
+
     public:
         explicit MemoryMappedFile(const fs::path& filename) {
             const auto fd = open(filename.string().c_str(), O_RDWR);
@@ -47,15 +48,24 @@ namespace ribomation::wordcount::mem_map {
             if (storage == MAP_FAILED) throw std::runtime_error{"mmap failed: "s + strerror(errno)};
             close(fd);
         }
+
         ~MemoryMappedFile() {
             munmap(storage, size);
         }
+
         [[nodiscard]] auto data() const -> std::span<char> {
             return std::span{static_cast<char *>(storage), size};
         }
+
         MemoryMappedFile() = delete;
+
         MemoryMappedFile(MemoryMappedFile const&) = delete;
+
         MemoryMappedFile& operator=(MemoryMappedFile const&) = delete;
+
+        MemoryMappedFile(MemoryMappedFile&) noexcept = delete;
+
+        MemoryMappedFile& operator=(MemoryMappedFile&&) noexcept = delete;
     };
 
     class WordIterator {
@@ -106,30 +116,33 @@ namespace ribomation::wordcount::mem_map {
 
     private:
         void read_next() {
-        next_word:
-            while (current_pos != payload.end() && !is_letter(*current_pos)) {
-                ++current_pos;
-            }
+            while (true) {
+                while (current_pos != payload.end() && !is_letter(*current_pos)) {
+                    ++current_pos;
+                }
 
-            if (current_pos == payload.end()) {
-                at_end = true;
-                current_word = {};
-                return;
-            }
+                if (current_pos == payload.end()) {
+                    at_end = true;
+                    current_word = {};
+                    return;
+                }
 
-            auto start = current_pos;
-            while (current_pos != payload.end() && is_letter(*current_pos)) {
-                *current_pos = to_lower(*current_pos);
-                ++current_pos;
-            }
+                auto start = current_pos;
+                while (current_pos != payload.end() && is_letter(*current_pos)) {
+                    *current_pos = to_lower(*current_pos);
+                    ++current_pos;
+                }
 
-            auto sp = span<char>(start, current_pos);;
-            auto sv = string_view{sp.data(), sp.size()};
-            if (sv.size() <= min_length || modern_words.contains(sv)) {
-                goto next_word;
+                auto sp = span<char>(start, current_pos);;
+                auto sv = string_view{sp.data(), sp.size()};
+                if (sv.size() < min_length || modern_words.contains(sv)) {
+                    continue;
+                }
+
+                current_word = sv;
+                at_end = false;
+                break;
             }
-            current_word = std::move(sv);
-            at_end = false;
         }
 
         inline static std::unordered_set<string_view> const modern_words = {
@@ -173,9 +186,10 @@ namespace ribomation::wordcount::mem_map {
         sortable.insert(sortable.end(),
                         std::make_move_iterator(freqs.begin()), std::make_move_iterator(freqs.end()));
 
-        auto by_count_desc = [](auto const& a, auto const& b) { return a.second > b.second; };
-        r::partial_sort(sortable, sortable.begin() + params.max_words, by_count_desc);
-        sortable.resize(params.max_words);
+        auto by_freq_desc = [](auto const& a, auto const& b) { return a.second > b.second; };
+        auto const N = std::min<unsigned>(params.max_words, sortable.size());
+        r::partial_sort(sortable, sortable.begin() + N, by_freq_desc);
+        sortable.resize(N);
 
 
         // --- making html span tags ---

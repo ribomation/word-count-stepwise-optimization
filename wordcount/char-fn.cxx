@@ -132,12 +132,12 @@ namespace ribomation::wordcount::char_fn {
         sortable.insert(sortable.end(), std::make_move_iterator(freqs.begin()), std::make_move_iterator(freqs.end()));
 
         auto by_freq_desc = [](WordFreq const& a, WordFreq const& b) { return a.second > b.second; };
-        r::partial_sort(sortable, sortable.begin() + params.max_words, by_freq_desc);
+        auto const N = std::min<unsigned>(params.max_words, sortable.size());
+        r::partial_sort(sortable, sortable.begin() + N, by_freq_desc);
+        sortable.resize(N);
 
         // --- making html span tags ---
-        sortable.resize(params.max_words);
         auto items = std::move(sortable);
-
         auto max_freq = items.front().second;
         auto min_freq = items.back().second;
         auto scale = static_cast<double>(params.max_font - params.min_font) / (max_freq - min_freq);
